@@ -20,14 +20,16 @@ def main():
     st.title("Time Series Analyzer (Modular Version)")
 
     # 1) Data Input
+    
     x_data, y_data = load_data()
-
     # Construct the Analyzer only if data is available
     if x_data is not None and y_data is not None:
         analyzer = TimeSeriesAnalyzer(y=y_data, x=x_data)
     else:
         analyzer = None
 
+
+    
     # 2) Descriptive Statistics
     show_descriptive_statistics(analyzer)
     # 3) Noise Cleaning

@@ -6,70 +6,46 @@ import pandas as pd
 from plot_utils import *
 from TSAnalyzer import TimeSeriesAnalyzer
 import sympy
+import streamlit as st
+import sympy
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Ensure session state keys exist
+if "x_data" not in st.session_state:
+    st.session_state.x_data = None
+if "y_data" not in st.session_state:
+    st.session_state.y_data = None
 
 def load_data():
-    """
-    Generate data from a user-defined expression (with Sympy) + optional Gaussian noise.
-    Returns (x_data, y_data) or (None, None) if generation fails.
-    """
-
     st.subheader("1. Generate data from a custom expression (Sympy)")
 
-    st.markdown("""
-    **Type your function in the box below,** using **'x'** as the variable.
-
-    **Examples**:
-    - `4*x + 5*log(x) + 73*sin(x)`
-    - `exp(x) - 0.5*x^2`
-    - `sin(x)*cos(2*x)`
-
-    **Sympy Functions** you can use (among others):
-    - `sin(x)`, `cos(x)`, `tan(x)`
-    - `log(x)` (natural log), `exp(x)` (exponential)
-    - `sqrt(x)`, `abs(x)`, etc.
-    """)
-
-    # Text input for the user-defined expression
+    # ... domain selection, function input, etc. ...
     function_string = st.text_input("Function f(x)", "4*x + 5*log(x) + 73*sin(x)")
-
-    # Domain controls
-    st.write("**Choose the domain of x:**")
     x_min = st.number_input("x start (x_min)", value=1.0, step=1.0)
     x_max = st.number_input("x end (x_max)", value=20.0, step=1.0)
     num_points = st.slider("Number of Points", 10, 2000, 200, step=10)
-
-    # Noise slider
     noise_level = st.slider("Noise Level (standard deviation)", 0.0, 5.0, 0.0, 0.1)
 
-    x_data = None
-    y_data = None
-
-    # Button to generate data
+    # If user clicks "Generate Data"
     if st.button("Generate Data"):
-        # Create our x vector
+        import sympy
         x_data = np.linspace(x_min, x_max, num_points)
-
-        # Use Sympy to parse and evaluate the expression
+        
         try:
-            # 1. Define a Sympy symbol for x
             x_sym = sympy.Symbol('x', real=True)
             expr = sympy.sympify(function_string)
             func = sympy.lambdify(x_sym, expr, 'numpy')
             y_data = func(x_data)
-
-            # 5. If the user wants noise, add Gaussian noise
             if noise_level > 0.0:
-                y_data = y_data + np.random.normal(scale=noise_level, size=len(x_data))
+                y_data += np.random.normal(scale=noise_level, size=len(x_data))
 
-        except sympy.SympifyError as e:
-            st.error(f"Invalid expression: {e}")
-            x_data, y_data = None, None
-        except Exception as e:
-            st.error(f"Error evaluating function: {e}")
-            x_data, y_data = None, None
+            # Store into session state
+            st.session_state.x_data = x_data
+            st.session_state.y_data = y_data
 
-        # Plot if successful
-        if y_data is not None:
+            # Plot
             st.write("## Generated Time Series")
             fig, ax = plt.subplots(figsize=(8, 4))
             label = "f(x) + noise" if noise_level > 0 else "f(x)"
@@ -80,7 +56,13 @@ def load_data():
             ax.legend()
             st.pyplot(fig)
 
-    return x_data, y_data
+        except sympy.SympifyError as e:
+            st.error(f"Invalid expression: {e}")
+        except Exception as e:
+            st.error(f"Error evaluating function: {e}")
+
+    # At the end, return whatever is in session state
+    return st.session_state.x_data, st.session_state.y_data
 
 
 
@@ -140,16 +122,31 @@ def show_visualization(analyzer):
 
 
 def show_decomposition(analyzer):
-    st.subheader("5. Seasonal Decomposition (Optional)")
+    """
+    Detrend the time series using one of three methods:
+      - 'constant': remove the mean
+      - 'linear': remove best-fit line
+      - 'polynomial': remove best-fit polynomial of specified degree
+    """
+    st.subheader("5. Detrending (Optional)")
 
     if analyzer is not None:
-        decompose_model = st.selectbox("Model", ["additive", "multiplicative"])
-        if st.button("Perform Seasonal Decomposition"):
-            result = analyzer.decompose(model=decompose_model)
-            st.write("Trend, Seasonal, and Residual Components:")
-            # Decomposition returns a result object, so we let our helper 
-            # convert it to a figure.
-            fig_decomp = plot_decomposition_result(result)
-            st.pyplot(fig_decomp)
+        # Let the user choose how to detrend
+        method = st.selectbox("Select a detrend method", ["constant", "linear", "polynomial"])
+
+        degree = 2  # default polynomial degree
+        if method == "polynomial":
+            degree = st.slider("Polynomial degree", min_value=2, max_value=10, value=2)
+
+        # Button triggers the detrending
+        if st.button("Perform Detrend"):
+            # The 'decompose' method in the analyzer class is renamed or repurposed
+            # so it does detrending instead of seasonal_decompose.
+            # e.g.: analyzer.decompose(method='linear', degree=2)
+            detrended, fig = analyzer.decompose(method=method, degree=degree)
+            st.pyplot(fig)
+            # 'analyzer.decompose' already plots original vs detrended.
+            # If you want additional text or checks here, do so.
+            st.success("Detrending complete! See the plot above.")
     else:
         st.info("No data available. Please upload or generate data first.")

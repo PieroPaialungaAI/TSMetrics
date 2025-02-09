@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import savgol_filter
+from scipy.signal import savgol_filter, detrend
 from statsmodels.tsa.seasonal import seasonal_decompose
 import sympy
 
@@ -52,16 +52,36 @@ class TimeSeriesAnalyzer:
         return cleaned_y, noise
 
 
-    def decompose(self, model='additive'):
-        """Perform seasonal decomposition on the time series."""
-        result = seasonal_decompose(self.y, model=model, period=int(len(self.y) / 12))
-        result.plot()
-        plt.show()
-        return result
+    def decompose(self, method='linear', degree=2):
+        """
+        Detrend the time series with three possible options:
+          - 'constant': remove the mean
+          - 'linear': remove best-fit line
+          - 'polynomial': remove best-fit polynomial of given degree
+        """
+        if method not in ['constant', 'linear', 'polynomial']:
+            raise ValueError("method must be one of {'constant','linear','polynomial'}")
+
+        if method in ['constant', 'linear']:
+            # Use scipy.signal.detrend
+            detrended = detrend(self.y, type=method)
+        else:
+            # Polynomial detrending
+            coeffs = np.polyfit(self.x, self.y, degree)
+            trend = np.polyval(coeffs, self.x)
+            detrended = self.y - trend
+
+        # Create a figure and axis
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(self.x, self.y, label="Original", alpha=0.7)
+        ax.plot(self.x, detrended, label=f"Detrended ({method})", alpha=0.7)
+        ax.set_title(f"Signal Detrend - Method: {method}")
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Value")
+        ax.legend()
+        ax.grid(True)
+
+        # Instead of plt.show(), return the array and the figure
+        return detrended, fig
     
 
-    def symbolic_conversion(self):
-        x_sym = sympy.Symbol('x', real=True)
-        expr = sympy.sympify(function_string)
-        func = sympy.lambdify(x_sym, expr, 'numpy')
-        y_data = func(x_data)
