@@ -5,7 +5,7 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 import sympy
 
 class TimeSeriesAnalyzer:
-    def __init__(self, y, x=None, x_label = 'Time', y_label ='Value'):
+    def __init__(self, y, x = None, x_label = 'Time', y_label ='Value'):
         self.y = y
         self.x = np.arange(len(y)) if x is None else x
         self.cleaned_y = None

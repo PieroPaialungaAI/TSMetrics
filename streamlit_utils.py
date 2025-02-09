@@ -9,18 +9,19 @@ from utils import symbolic_conversion
 from constants import * 
 
 
-# Ensure session state keys exist
-if "x_data" not in st.session_state:
-    st.session_state.x_data = None
-if "y_data" not in st.session_state:
-    st.session_state.y_data = None
-if "x_label" not in st.session_state:
-    st.session_state.x_label = None
-if "y_label" not in st.session_state:
-    st.session_state.y_label = None
+
 
 
 def load_data():
+    # Ensure session state keys exist
+    if "x_data" not in st.session_state:
+        st.session_state.x_data = None
+    if "y_data" not in st.session_state:
+        st.session_state.y_data = None
+    if "x_label" not in st.session_state:
+        st.session_state.x_label = None
+    if "y_label" not in st.session_state:
+        st.session_state.y_label = None
     st.subheader("🚀 Generate or Upload Your Time Series Data")
     st.write("""
         **Step 1: Choose how to provide your time series data.**  
@@ -33,10 +34,10 @@ def load_data():
 
     if data_option == "Generate Custom Data":
         function_string = st.text_input("📝 Type Your Function (in terms of `x`)", "4*x + 5*log(x) + 73*sin(x)")
-        x_min = st.number_input("Start of x-axis (x_min)", value=1.0, step=1.0)
-        x_max = st.number_input("End of x-axis (x_max)", value=20.0, step=1.0)
-        num_points = st.slider("🔢 Number of Points to Generate", 10, 2000, 200)
-        noise_level = st.slider("🌪️ Add Noise to the Data (Standard Deviation)", 0.0, 5.0, 0.0, 0.1)
+        x_min = st.number_input("Start of x-axis (x_min)", value = MIN_X, step = X_STEP)
+        x_max = st.number_input("End of x-axis (x_max)", value = MAX_X, step = X_STEP)
+        num_points = st.slider("🔢 Number of Points to Generate", MIN_POINTS, MAX_POINTS, POINTS_STEP)
+        noise_level = st.slider("🌪️ Add Noise to the Data (Standard Deviation)", MIN_NOISE, MAX_NOISE, MIN_NOISE, STEP_NOISE)
         x_label = st.text_input("🛠️ Custom x-axis Label", "Time")
         y_label = st.text_input("🛠️ Custom y-axis Label", "Value")
 
@@ -51,7 +52,6 @@ def load_data():
                 st.session_state.y_data = y_data
                 st.session_state.x_label = x_label
                 st.session_state.y_label = y_label
-
             except Exception as e:
                 st.error(f"❌ Error: {e}")
 
