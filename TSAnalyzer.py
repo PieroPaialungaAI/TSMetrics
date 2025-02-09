@@ -5,12 +5,14 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 import sympy
 
 class TimeSeriesAnalyzer:
-    def __init__(self, y, x=None):
+    def __init__(self, y, x=None, x_label = 'Time', y_label ='Value'):
         self.y = y
         self.x = np.arange(len(y)) if x is None else x
         self.cleaned_y = None
         self.noise = None
         self.fft_result = None
+        self.x_label = x_label
+        self.y_label = y_label 
 
     def perform_fft(self):
         """Compute and return the Fast Fourier Transform."""

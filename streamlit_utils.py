@@ -11,142 +11,190 @@ import sympy
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from utils import * 
 
 # Ensure session state keys exist
 if "x_data" not in st.session_state:
     st.session_state.x_data = None
 if "y_data" not in st.session_state:
     st.session_state.y_data = None
+if "x_label" not in st.session_state:
+    st.session_state.x_label = None
+if "y_label" not in st.session_state:
+    st.session_state.y_label = None
 
 def load_data():
-    st.subheader("1. Generate data from a custom expression (Sympy)")
-
-    # ... domain selection, function input, etc. ...
-    function_string = st.text_input("Function f(x)", "4*x + 5*log(x) + 73*sin(x)")
-    x_min = st.number_input("x start (x_min)", value=1.0, step=1.0)
-    x_max = st.number_input("x end (x_max)", value=20.0, step=1.0)
-    num_points = st.slider("Number of Points", 10, 2000, 200, step=10)
-    noise_level = st.slider("Noise Level (standard deviation)", 0.0, 5.0, 0.0, 0.1)
-
-    # If user clicks "Generate Data"
-    if st.button("Generate Data"):
-        import sympy
-        x_data = np.linspace(x_min, x_max, num_points)
+    st.subheader("🚀 Generate or Upload Your Time Series Data")
+    st.write("""
+        **Step 1: Choose how to provide your time series data.**  
         
-        try:
-            x_sym = sympy.Symbol('x', real=True)
-            expr = sympy.sympify(function_string)
-            func = sympy.lambdify(x_sym, expr, 'numpy')
-            y_data = func(x_data)
-            if noise_level > 0.0:
-                y_data += np.random.normal(scale=noise_level, size=len(x_data))
+        🔹 **Generate custom data:** Define a mathematical function in terms of `x` (e.g., `4*x + 5*log(x) + 73*sin(x)`).  
+        🔹 **Upload your own data:** Upload a `.csv` file with your time series.
+    """)
 
-            # Store into session state
-            st.session_state.x_data = x_data
-            st.session_state.y_data = y_data
+    # Choice between generating or uploading data
+    data_option = st.radio("How would you like to provide your time series data?", ["Generate Custom Data", "Upload CSV File"])
 
-            # Plot
-            st.write("## Generated Time Series")
-            fig, ax = plt.subplots(figsize=(8, 4))
-            label = "f(x) + noise" if noise_level > 0 else "f(x)"
-            ax.plot(x_data, y_data, label=label)
-            ax.set_xlabel("x")
-            ax.set_ylabel("f(x)")
-            ax.set_title("Plot of User-Defined Function (Sympy)")
-            ax.legend()
-            st.pyplot(fig)
+    x_data = None
+    y_data = None
 
-        except sympy.SympifyError as e:
-            st.error(f"Invalid expression: {e}")
-        except Exception as e:
-            st.error(f"Error evaluating function: {e}")
+    if data_option == "Generate Custom Data":
+        function_string = st.text_input("📝 Type Your Function (in terms of `x`)", "4*x + 5*log(x) + 73*sin(x)")
+        st.write("### Set the x-axis range:")
+        x_min = st.number_input("Start of x-axis (x_min)", value=1.0, step=1.0)
+        x_max = st.number_input("End of x-axis (x_max)", value=20.0, step=1.0)
+        num_points = st.slider("🔢 Number of Points to Generate", 10, 2000, 200, step=10)
+        noise_level = st.slider("🌪️ Add Noise to the Data (Standard Deviation)", 0.0, 5.0, 0.0, 0.1)
+        
+        # Custom axis labels
+        x_label = st.text_input("🛠️ Custom x-axis Label", "x-axis")
+        y_label = st.text_input("🛠️ Custom y-axis Label", "f(x)")
 
-    # At the end, return whatever is in session state
-    return st.session_state.x_data, st.session_state.y_data
+        if st.button("✨ Generate Time Series Data"):
+            try:
+                x_data = np.linspace(x_min, x_max, num_points)
+                y_data = symbolic_conversion(function_string, x_data)
+                if noise_level > 0.0:
+                    y_data += np.random.normal(scale=noise_level, size=len(x_data))
+
+                # Store in session state
+                st.session_state.x_data = x_data
+                st.session_state.y_data = y_data
+
+                # Plotting
+                st.write("### 📊 Here’s Your Generated Time Series")
+                fig, ax = plt.subplots(figsize=(8, 4))
+                label = "f(x) + noise" if noise_level > 0 else "f(x)"
+                ax.plot(x_data, y_data, label=label)
+                ax.set_xlabel(x_label)
+                ax.set_ylabel(y_label)
+                ax.set_title("User-Defined Time Series Plot")
+                ax.legend()
+                st.pyplot(fig)
+            except Exception as e:
+                st.error(f"❌ Error: {e}")
+
+    elif data_option == "Upload CSV File":
+        uploaded_file = st.file_uploader("📂 Upload Your CSV File", type=["csv"])
+
+        if uploaded_file is not None:
+            try:
+                df = pd.read_csv(uploaded_file)
+                st.write("### 📄 Uploaded Data Preview:")
+                st.dataframe(df.head())
+
+                # Let the user choose the column with the time series data
+                column_name = st.selectbox("Select the column with your time series data", df.columns)
+                y_data = df[column_name].values
+                x_data = np.arange(len(y_data))
+
+                # Custom axis labels
+                x_label = st.text_input("🛠️ Custom x-axis Label for Uploaded Data", "Index")
+                y_label = st.text_input("🛠️ Custom y-axis Label for Uploaded Data", column_name)
+
+                # Store in session state
+                st.session_state.x_data = x_data
+                st.session_state.y_data = y_data
+                st.session_state.x_label = x_label
+                st.session_state.y_label = y_label 
+
+                # Plotting
+                st.write("### 📊 Here’s Your Uploaded Time Series")
+                fig, ax = plt.subplots(figsize=(8, 4))
+                ax.plot(x_data, y_data, label=column_name)
+                ax.set_xlabel(x_label)
+                ax.set_ylabel(y_label)
+                ax.set_title("Uploaded Time Series Plot")
+                ax.legend()
+                st.pyplot(fig)
+            except Exception as e:
+                st.error(f"❌ Error loading CSV file: {e}")
+
+    return st.session_state.x_data, st.session_state.y_data, st.session_state.x_label, st.session_state.y_label
+
 
 
 
 def show_descriptive_statistics(analyzer):
-    st.subheader("2. Descriptive Statistics")
+    st.subheader("📊 Descriptive Statistics")
 
     if analyzer is not None:
-        if st.button("Compute Descriptive Statistics"):
+        st.write("**Explore key statistics for your time series:** Minimum, Maximum, Mean, Median, and Quartiles.")
+        if st.button("🔍 Compute Statistics"):
             stats = analyzer.descriptive_statistics()
-            st.write("**Minimum:**", stats["min"])
-            st.write("**Maximum:**", stats["max"])
-            st.write("**Mean:**", stats["mean"])
-            st.write("**Median:**", stats["median"])
-            st.write("**Quartiles (25%, 50%, 75%):**", stats["quartiles"].tolist())
+            st.write("### 📈 Statistics Summary:")
+            st.write(f"**Minimum Value:** {stats['min']}")
+            st.write(f"**Maximum Value:** {stats['max']}")
+            st.write(f"**Mean:** {stats['mean']}")
+            st.write(f"**Median:** {stats['median']}")
+            st.write(f"**Quartiles (25%, 50%, 75%):** {stats['quartiles'].tolist()}")
     else:
-        st.info("No data available. Please upload or generate data first.")
+        st.info("ℹ️ No data available. Please generate or upload your time series first.")
+
 
 
 def show_cleaning_options(analyzer):
-    st.subheader("3. Clean Noise in the Time Series")
+    st.subheader("🧼 Noise Reduction and Smoothing")
 
     if analyzer is not None:
-        method = st.selectbox("Select a noise cleaning method", ["savgol", "fft"])
-        
-        if method == "savgol":
-            window_length = st.slider("Window Length (must be odd)", 3, 101, 51, 2)
+        st.write("**Choose a method to clean and smooth your time series:**")
+        method = st.selectbox("Select Noise Reduction Method", ["Savitzky-Golay Filter", "FFT Low-Pass Filter"])
+
+        if method == "Savitzky-Golay Filter":
+            st.write("### ✨ Apply Savitzky-Golay Filter")
+            window_length = st.slider("Window Length (must be odd)", 3, 101, 51, step=2)
             polyorder = st.slider("Polynomial Order", 1, 5, 3)
             if window_length <= polyorder:
-                st.warning("Window length must be larger than polynomial order.")
-            else:
-                if st.button("Apply Savitzky-Golay Filter"):
-                    analyzer.clean_noise(method='savgol', 
-                                         window_length=window_length, 
-                                         polyorder=polyorder)
-                    st.success("Savgol filter applied.")
+                st.warning("⚠️ Window length must be greater than the polynomial order.")
+            elif st.button("🛠️ Apply Filter"):
+                analyzer.clean_noise(method='savgol', window_length=window_length, polyorder=polyorder)
+                st.success("✔️ Savitzky-Golay Filter Applied!")
         else:
-            cutoff = st.slider("Cutoff Frequency", 0.0, 0.5, 0.1, 0.01)
-            if st.button("Apply FFT Filter"):
+            st.write("### ⚡ Apply FFT Low-Pass Filter")
+            cutoff = st.slider("Cutoff Frequency", 0.0, 0.5, 0.1, step=0.01)
+            if st.button("🚀 Apply FFT Filter"):
                 analyzer.clean_noise(method='fft', cutoff=cutoff)
-                st.success("FFT filter applied.")
+                st.success("✔️ FFT Filter Applied!")
     else:
-        st.info("No data available. Please upload or generate data first.")
+        st.info("ℹ️ No data available. Please generate or upload your time series first.")
+
 
 
 def show_visualization(analyzer):
-    st.subheader("4. Visualization")
+    st.subheader("📊 Visualize Your Time Series")
 
     if analyzer is not None:
         if analyzer.cleaned_y is not None and analyzer.noise is not None:
-            st.write("**Cleaned Time Series and Noise**")
+            st.write("""
+            **Here’s your cleaned time series along with the detected noise component.**  
+            This helps you compare the original, cleaned, and noise-separated data in one plot!
+            """)
+
             fig = plot_cleaned_series(analyzer.x, analyzer.y, analyzer.cleaned_y, analyzer.noise)
             st.pyplot(fig)
+
+            st.success("✔️ Visualization complete! You can return to Step 3 to try other noise-cleaning methods.")
         else:
-            st.write("No cleaned data to display yet. Use the filters in step 3.")
+            st.write("⚠️ No cleaned data to display yet. Please apply a noise reduction filter in **Step 3**.")
     else:
-        st.info("No data available. Please upload or generate data first.")
+        st.info("ℹ️ No data available. Please generate or upload your time series first.")
 
 
 def show_decomposition(analyzer):
-    """
-    Detrend the time series using one of three methods:
-      - 'constant': remove the mean
-      - 'linear': remove best-fit line
-      - 'polynomial': remove best-fit polynomial of specified degree
-    """
-    st.subheader("5. Detrending (Optional)")
+    st.subheader("📉 Detrending Your Time Series")
 
     if analyzer is not None:
-        # Let the user choose how to detrend
-        method = st.selectbox("Select a detrend method", ["constant", "linear", "polynomial"])
+        st.write("**Remove trends from your data:** Choose from constant, linear, or polynomial detrending.")
+        method = st.selectbox("Choose Detrend Method", ["Constant (Remove Mean)", "Linear (Remove Best-Fit Line)", "Polynomial (Remove Polynomial Trend)"])
 
-        degree = 2  # default polynomial degree
-        if method == "polynomial":
-            degree = st.slider("Polynomial degree", min_value=2, max_value=10, value=2)
+        degree = 2
+        if "Polynomial" in method:
+            degree = st.slider("Select Polynomial Degree", 2, 10, 2)
 
-        # Button triggers the detrending
-        if st.button("Perform Detrend"):
-            # The 'decompose' method in the analyzer class is renamed or repurposed
-            # so it does detrending instead of seasonal_decompose.
-            # e.g.: analyzer.decompose(method='linear', degree=2)
-            detrended, fig = analyzer.decompose(method=method, degree=degree)
+        if st.button("🎯 Perform Detrend"):
+            detrended, fig = analyzer.decompose(method=method.lower().split()[0], degree=degree)
             st.pyplot(fig)
-            # 'analyzer.decompose' already plots original vs detrended.
-            # If you want additional text or checks here, do so.
-            st.success("Detrending complete! See the plot above.")
+            st.success("✔️ Detrending Complete! Check out the plot above.")
     else:
-        st.info("No data available. Please upload or generate data first.")
+        st.info("ℹ️ No data available. Please generate or upload your time series first.")
+

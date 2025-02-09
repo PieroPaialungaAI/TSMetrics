@@ -20,11 +20,12 @@ def main():
     st.title("Time Series Analyzer (Modular Version)")
 
     # 1) Data Input
-    
-    x_data, y_data = load_data()
+    x_label = 'Time'
+    y_label = 'Value'
+    x_data, y_data, x_label, y_label = load_data()
     # Construct the Analyzer only if data is available
     if x_data is not None and y_data is not None:
-        analyzer = TimeSeriesAnalyzer(y=y_data, x=x_data)
+        analyzer = TimeSeriesAnalyzer(y=y_data, x=x_data, x_label='Time', y_label='Value')
     else:
         analyzer = None
 
