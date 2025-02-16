@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter, detrend
 from statsmodels.tsa.seasonal import seasonal_decompose
 import sympy
+import pandas as pd 
 
 class TimeSeriesAnalyzer:
     def __init__(self, y, x = None, x_label = 'Time', y_label ='Value'):
@@ -12,7 +13,17 @@ class TimeSeriesAnalyzer:
         self.noise = None
         self.fft_result = None
         self.x_label = x_label
-        self.y_label = y_label 
+        self.y_label = y_label
+        self.y = self.filter_y()
+         
+
+    def filter_y(self):
+        if np.any(np.isnan(self.y)) is False:
+            return self.y
+        else:
+            return np.nan_to_num(self.y,nan = np.nanmean(x))
+
+
 
     def perform_fft(self):
         """Compute and return the Fast Fourier Transform."""
