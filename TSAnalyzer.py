@@ -21,7 +21,7 @@ class TimeSeriesAnalyzer:
         if np.any(np.isnan(self.y)) is False:
             return self.y
         else:
-            return np.nan_to_num(self.y,nan = np.nanmean(x))
+            return np.nan_to_num(self.y,nan = np.nanmean(self.y))
 
 
 
