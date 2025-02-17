@@ -95,15 +95,16 @@ def show_descriptive_statistics(analyzer):
             stats = analyzer.descriptive_statistics()
             st.write("### 📈 Statistics Summary")
             st.dataframe(stats)
-
+            stats_fig = analyzer.plot_descriptive_statistics()
+            st.pyplot(stats_fig)
             # Convert DataFrame to CSV for download
             csv = stats.to_csv(index=False).encode('utf-8')
-
+            file_name = st.text_input("Enter file name for download:", DEFAULT_STATISTICS_NAME)
             # Add a download button
             st.download_button(
                 label="📥 Download Statistics as CSV",
                 data=csv,
-                file_name="descriptive_statistics.csv",
+                file_name=file_name if file_name.endswith(".csv") else file_name + ".csv",
                 mime="text/csv"
             )
     else:

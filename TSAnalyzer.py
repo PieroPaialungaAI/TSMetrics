@@ -6,6 +6,7 @@ import sympy
 import pandas as pd 
 from scipy.signal import spectrogram
 from constants import * 
+import seaborn as sns
 
 class TimeSeriesAnalyzer:
     def __init__(self, y, x = None, x_label = 'Time', y_label ='Value'):
@@ -45,7 +46,18 @@ class TimeSeriesAnalyzer:
                 "Value": [ans["min"], ans["max"], ans["mean"], ans["median"], 
                           ans["quartiles"][0], ans["quartiles"][1], ans["quartiles"][2]]
             })
+        self.stats_df = stats_df
         return stats_df
+    
+    
+    def plot_descriptive_statistics(self):
+        fig, ax = plt.subplots(figsize=(8, 5))
+        sns.barplot(x="Statistic", y="Value", data=self.stats_df, ax=ax, palette="viridis")
+        ax.set_title("Descriptive Statistics")
+        ax.set_xlabel("Statistic")
+        ax.set_ylabel("Value")
+        plt.xticks(rotation=45)  # Rotate labels for better readability
+        return fig
 
 
     def clean_noise(self, method='savgol', **kwargs):
