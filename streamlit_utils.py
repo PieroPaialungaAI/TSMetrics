@@ -9,9 +9,6 @@ from utils import symbolic_conversion
 from constants import * 
 
 
-
-
-
 def load_data():
     # Ensure session state keys exist
     if "x_data" not in st.session_state:
@@ -161,9 +158,37 @@ def show_decomposition(analyzer):
         st.info("ℹ️ No data available. Please generate or upload your time series first.")
 
 
-# footer.py
+def show_spectrogram(analyzer):
+    """
+    Displays the FFT spectrogram of the time series data.
+    """
+    st.subheader("🎵 Frequency Analysis: Spectrogram")
+    
+    if analyzer is not None:
+        # User selects parameters for the spectrogram
+        window_size = st.slider("Select Window Size for FFT", 64, 1024, SPECTOGRAM_WINDOW_SIZE, step=64)
+        overlap = st.slider("Select Overlap", 0, window_size - 1, SPECTOGRAM_OVERLAP, step=8)
+        cmap = st.selectbox("Choose Colormap", ["inferno", "viridis", "plasma", "magma", "jet"], index=0)
 
-def display_footer(portfolio_url = PORTFOLIO_URL):
+        if st.button("🎛️ Compute Spectrogram"):
+            f, t, Sxx = analyzer.fft_spectogram(window_size=window_size, overlap=overlap, cmap=cmap)
+
+            st.write("### 🔍 Spectrogram Analysis")
+            fig, ax = plt.subplots(figsize=(10, 5))
+            cax = ax.pcolormesh(t, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap=cmap)
+            fig.colorbar(cax, ax=ax, label=f'{analyzer.y_label} Intensity')
+
+            ax.set_title("Spectrogram (Fourier Transform Heatmap)")
+            ax.set_xlabel(f"{analyzer.x_label} (Natural Domain)")
+            ax.set_ylabel(f"{analyzer.x_label} Frequency")
+
+            st.pyplot(fig)
+            st.success("✔️ Spectrogram Computed!")
+    else:
+        st.info("ℹ️ No data available. Please generate or upload your time series first.")
+
+
+def show_footer(portfolio_url = PORTFOLIO_URL):
     """Displays a footer with a customizable link to the portfolio."""
     st.markdown("---")
     st.markdown(
@@ -174,3 +199,4 @@ def display_footer(portfolio_url = PORTFOLIO_URL):
         """, 
         unsafe_allow_html=True
     )
+

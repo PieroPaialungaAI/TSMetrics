@@ -4,6 +4,8 @@ from scipy.signal import savgol_filter, detrend
 from statsmodels.tsa.seasonal import seasonal_decompose
 import sympy
 import pandas as pd 
+from scipy.signal import spectrogram
+from constants import * 
 
 class TimeSeriesAnalyzer:
     def __init__(self, y, x = None, x_label = 'Time', y_label ='Value'):
@@ -14,21 +16,21 @@ class TimeSeriesAnalyzer:
         self.fft_result = None
         self.x_label = x_label
         self.y_label = y_label
-        self.y = self.filter_y()
-         
+        self.y, self.has_nan = self.filter_y()
 
+        
     def filter_y(self):
         if np.any(np.isnan(self.y)) is False:
-            return self.y
+            return self.y, False
         else:
-            return np.nan_to_num(self.y,nan = np.nanmean(self.y))
-
+            return np.nan_to_num(self.y,nan = np.nanmean(self.y)), True
 
 
     def perform_fft(self):
         """Compute and return the Fast Fourier Transform."""
         self.fft_result = np.fft.fft(self.y)
         return self.fft_result
+
 
     def descriptive_statistics(self):
         """Compute min, max, mean, median, and quartiles."""
@@ -39,6 +41,7 @@ class TimeSeriesAnalyzer:
             "median": np.median(self.y),
             "quartiles": np.percentile(self.y, [25, 50, 75])
         }
+
 
     def clean_noise(self, method='savgol', **kwargs):
         """Clean the noise in the time series using different filtering methods."""
@@ -54,6 +57,7 @@ class TimeSeriesAnalyzer:
         
         self.cleaned_y, self.noise = cleaned_y, noise
         return cleaned_y, noise
+
 
     def _fft_filter(self, cutoff=0.1):
         """Apply a low-pass filter using FFT to remove high-frequency noise."""
@@ -93,8 +97,45 @@ class TimeSeriesAnalyzer:
         ax.set_ylabel("Value")
         ax.legend()
         ax.grid(True)
-
         # Instead of plt.show(), return the array and the figure
         return detrended, fig
     
 
+    def fft_spectogram(self, window_size = SPECTOGRAM_WINDOW_SIZE, overlap= SPECTOGRAM_OVERLAP, cmap= SPECTOGRAM_CMAP):
+        """
+        Computes and plots the spectrogram of a given signal.
+        
+        Parameters:
+        - signal: 1D NumPy array of the time-series signal.
+        - sampling_rate: Sampling rate of the signal (Hz).
+        - window_size: Size of the FFT window (default=256).
+        - overlap: Overlap between windows (default=128).
+        - cmap: Colormap for the heatmap.
+        
+        Returns:
+        - f: Frequencies array.
+        - t: Time bins array.
+        - Sxx: Spectrogram matrix.
+        """
+        # Compute the spectrogram using STFT
+        signal = self.y
+        sampling_rate = 1/(self.x[1]-self.x[0])
+
+        f, t, Sxx = spectrogram(signal, fs=sampling_rate, nperseg=window_size, noverlap=overlap)
+
+        # Convert to log scale for better visualization
+        Sxx_log = 10 * np.log10(Sxx + 1e-10)  # Adding a small constant to avoid log(0)
+
+        # Plot the heatmap
+        fig, ax = plt.subplots(figsize=(10, 5))
+        cax = ax.pcolormesh(t, f, Sxx_log, shading='gouraud', cmap=cmap)
+        fig.colorbar(cax, ax=ax, label=f'{self.y_label} Intensity')
+
+        # Labels and title
+        ax.set_title("Spectrogram (Fourier Transform Heatmap)")
+        ax.set_xlabel(f"{self.x_label} natural domain")
+        ax.set_ylabel(f"{self.x_label} frequency")
+        
+        plt.show()
+        
+        return f, t, Sxx

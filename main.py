@@ -29,27 +29,13 @@ def main():
         analyzer = TimeSeriesAnalyzer(y=y_data, x=x_data, x_label=x_label, y_label=y_label)
     else:
         analyzer = None
-
-
     
-    # 2) Descriptive Statistics
+    show_spectrogram(analyzer)
     show_descriptive_statistics(analyzer)
-    # 3) Noise Cleaning
     show_cleaning_options(analyzer)
-    # 4) Visualizations
     show_visualization(analyzer)
-    # 5) Seasonal Decomposition
     show_decomposition(analyzer)
-
-    st.markdown("---")
-    st.markdown(
-        """
-        <div style='text-align: center; font-size: 12px; margin-top: 50px;'>
-            🔗 Check out my <a href='https://towardsdatascience.com/author/piero-paialunga/' target='_blank'>portfolio and projects</a>!
-        </div>
-        """, 
-        unsafe_allow_html=True
-    )
+    show_footer()
 
 # Standard Python convention to run the main function
 if __name__ == "__main__":
