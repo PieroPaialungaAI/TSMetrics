@@ -34,13 +34,18 @@ class TimeSeriesAnalyzer:
 
     def descriptive_statistics(self):
         """Compute min, max, mean, median, and quartiles."""
-        return {
+        ans =  {
             "min": np.min(self.y),
             "max": np.max(self.y),
             "mean": np.mean(self.y),
             "median": np.median(self.y),
-            "quartiles": np.percentile(self.y, [25, 50, 75])
+            "quartiles": np.percentile(self.y, QUARTILES)
         }
+        stats_df = pd.DataFrame({"Statistic": STATISTICS_DF_COLUMNS,
+                "Value": [ans["min"], ans["max"], ans["mean"], ans["median"], 
+                          ans["quartiles"][0], ans["quartiles"][1], ans["quartiles"][2]]
+            })
+        return stats_df
 
 
     def clean_noise(self, method='savgol', **kwargs):

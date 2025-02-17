@@ -30,7 +30,7 @@ def load_data():
     plot_container = st.container()  # Persistent container for plotting
 
     if data_option == "Generate Custom Data":
-        function_string = st.text_input("📝 Type Your Function (in terms of `x`)", "4*x + 5*log(x) + 73*sin(x)")
+        function_string = st.text_input("📝 Type Your Function (in terms of `x`)", DEFAULT_TS)
         x_min = st.number_input("Start of x-axis (x_min)", value = MIN_X, step = X_STEP)
         x_max = st.number_input("End of x-axis (x_max)", value = MAX_X, step = X_STEP)
         num_points = st.slider("🔢 Number of Points to Generate", MIN_POINTS, MAX_POINTS, POINTS_STEP)
@@ -93,12 +93,19 @@ def show_descriptive_statistics(analyzer):
     if analyzer is not None:
         if st.button("🔍 Compute Statistics"):
             stats = analyzer.descriptive_statistics()
-            st.write("### 📈 Statistics Summary:")
-            st.write(f"**Minimum Value:** {stats['min']}")
-            st.write(f"**Maximum Value:** {stats['max']}")
-            st.write(f"**Mean:** {stats['mean']}")
-            st.write(f"**Median:** {stats['median']}")
-            st.write(f"**Quartiles (25%, 50%, 75%):** {stats['quartiles'].tolist()}")
+            st.write("### 📈 Statistics Summary")
+            st.dataframe(stats)
+
+            # Convert DataFrame to CSV for download
+            csv = stats.to_csv(index=False).encode('utf-8')
+
+            # Add a download button
+            st.download_button(
+                label="📥 Download Statistics as CSV",
+                data=csv,
+                file_name="descriptive_statistics.csv",
+                mime="text/csv"
+            )
     else:
         st.info("ℹ️ No data available. Please generate or upload your time series first.")
 
