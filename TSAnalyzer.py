@@ -7,6 +7,8 @@ import pandas as pd
 from scipy.signal import spectrogram
 from constants import * 
 import seaborn as sns
+from statsmodels.tsa.arima.model import ARIMA
+
 
 class TimeSeriesAnalyzer:
     def __init__(self, y, x = None, x_label = 'Time', y_label ='Value'):
@@ -156,3 +158,51 @@ class TimeSeriesAnalyzer:
         plt.show()
         
         return f, t, Sxx
+
+
+    def forecast(self, steps=10, order=(1,1,1), plot=True):
+        """
+        Forecast future values using ARIMA model.
+        
+        Parameters:
+        - steps (int): Number of future steps to predict.
+        - order (tuple): ARIMA order (p, d, q). Default is (1,1,1).
+        - plot (bool): Whether to plot the forecast.
+        
+        Returns:
+        - forecast_df (DataFrame): DataFrame with forecast values and confidence intervals.
+        """
+        # Fit ARIMA model
+        model = ARIMA(self.y, order=order)
+        model_fit = model.fit()
+
+        # Generate forecast
+        forecast_result = model_fit.get_forecast(steps=steps)
+        forecast_values = forecast_result.predicted_mean
+        conf_int = forecast_result.conf_int()  # ✅ Fix: Convert to NumPy array before indexing
+
+        # Create DataFrame for forecasted values
+        forecast_index = np.arange(len(self.y), len(self.y) + steps)
+        forecast_df = pd.DataFrame({
+            "Time": forecast_index,
+            "Forecast": forecast_values,  # ✅ Fix: Ensure forecast values are NumPy arrays
+            "Lower Bound": conf_int[:, 0],  # ✅ Now works correctly
+            "Upper Bound": conf_int[:, 1]
+        })
+
+        # Plot if requested
+        if plot:
+            fig, ax = plt.subplots(figsize=(10, 5))
+            ax.plot(self.x[:-steps], self.y[:-steps], label="Original Data", marker='o', linestyle='-', alpha=0.7, color='navy')
+            ax.plot(self.x[-steps:], self.y[-steps:], marker='o', linestyle='-', alpha=0.1, color='navy')
+            ax.plot(self.x[-steps:], forecast_values, label="Forecast", marker='o', linestyle='--', color='r')
+            ax.fill_between(self.x[-steps:], conf_int[:,0], conf_int[:,1], color='r', alpha=0.2)
+            
+            ax.set_title("Time Series Forecast (ARIMA)")
+            ax.set_xlabel(self.x_label)
+            ax.set_ylabel(self.y_label)
+            ax.legend()
+            ax.grid(True)
+            plt.show()
+
+        return forecast_df, fig

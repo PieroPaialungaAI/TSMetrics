@@ -29,11 +29,11 @@ def main():
         analyzer = TimeSeriesAnalyzer(y=y_data, x=x_data, x_label=x_label, y_label=y_label)
     else:
         analyzer = None
-    
+    show_forecasting(analyzer)
+    show_cleaning_options(analyzer)
+    show_cleaning(analyzer)
     show_spectrogram(analyzer)
     show_descriptive_statistics(analyzer)
-    show_cleaning_options(analyzer)
-    show_visualization(analyzer)
     show_decomposition(analyzer)
     show_footer()
 

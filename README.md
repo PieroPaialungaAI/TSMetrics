@@ -58,3 +58,9 @@ Contributions are welcome! If you'd like to contribute to TSMetrics, please fork
 ## Acknowledgments
 
 We appreciate the contributions of the open-source community and the developers who have made this project possible.
+
+## 👨‍🚀 Author
+## 👨‍🚀 Author
+Made with ❤️ by Piero Paialunga. This is **[my portfolio](https://piero-paialunga.medium.com/)** and this is 
+**[my LinkedIn Account](https://www.linkedin.com/in/pieropaialunga/)**
+Feel free to reach out for questions or collaborations!

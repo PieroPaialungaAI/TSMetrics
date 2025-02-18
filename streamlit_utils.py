@@ -130,7 +130,7 @@ def show_cleaning_options(analyzer):
         st.info("ℹ️ No data available. Please generate or upload your time series first.")
 
 
-def show_visualization(analyzer):
+def show_cleaning(analyzer):
     st.subheader("📊 Visualize Your Time Series")
 
     if analyzer is not None:
@@ -194,6 +194,44 @@ def show_spectrogram(analyzer):
             st.success("✔️ Spectrogram Computed!")
     else:
         st.info("ℹ️ No data available. Please generate or upload your time series first.")
+
+
+def show_forecasting(analyzer):
+    """
+    Streamlit interface for forecasting using the ARIMA model.
+    """
+    st.subheader("🔮 Time Series Forecasting")
+
+    if analyzer is not None:
+        # User inputs for forecast settings
+        steps = st.slider("🔢 Steps to Predict", min_value=5, max_value=100, value=10, step=5)
+        p = st.number_input("📊 AR Order (p)", min_value=0, max_value=5, value=1, step=1)
+        d = st.number_input("🔄 Differencing Order (d)", min_value=0, max_value=2, value=1, step=1)
+        q = st.number_input("🌀 MA Order (q)", min_value=0, max_value=5, value=1, step=1)
+        
+        if st.button("🚀 Run Forecast"):
+            # Perform forecast
+            forecast_df, fig = analyzer.forecast(steps=steps, order=(p, d, q))
+
+            # Show forecast plot
+            st.pyplot(fig)
+
+            # Convert forecast DataFrame to CSV for download
+            csv = forecast_df.to_csv(index=False).encode("utf-8")
+
+            # User input for custom file name
+            file_name = st.text_input("Enter file name for download:", "forecast_results.csv")
+
+            # Add download button
+            st.download_button(
+                label="📥 Download Forecast Data",
+                data=csv,
+                file_name=file_name if file_name.endswith(".csv") else file_name + ".csv",
+                mime="text/csv"
+            )
+    else:
+        st.info("ℹ️ No data available. Please generate or upload your time series first.")
+
 
 
 def show_footer(portfolio_url = PORTFOLIO_URL):
