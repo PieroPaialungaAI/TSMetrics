@@ -1,4 +1,4 @@
-# TSAnalyzer
+# TSMetrics
 
 TSMetrics is a Python-based toolkit designed for evaluating and visualizing time series data using multiple metrics. It provides a comprehensive set of tools to analyze time series datasets, compute standard and specific metrics, and generate insightful visualizations.
 
